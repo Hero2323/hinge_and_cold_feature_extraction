@@ -19,15 +19,19 @@ R_OUTER = 35.0
 K_S = np.arange(3, 8)
 
 class Cold():
-    def __init__(self, opt):
-        self.sharpness_factor = opt.sharpness_factor
-        self.bordersize = opt.bordersize
-        self.show_images = opt.show_images
-        self.is_binary = opt.is_binary
+    def __init__(self, params):
+        self.sharpness_factor = params[0]
+        self.bordersize = params[1]
+        self.show_images = params[2]
+        self.is_binary = params[3]
         
-    def preprocess_binary_image(self, img_file, sharpness_factor = 10, bordersize = 3):
-        im = Image.open(img_file)
+    def preprocess_binary_image(self, im, sharpness_factor = 10, bordersize = 3):
         
+        kernel = np.ones((3, 3))
+        img = cv2.morphologyEx(im, cv2.MORPH_CLOSE, kernel)
+        img = cv2.medianBlur(img, 3)
+        (thresh, img) = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        im = Image.fromarray(img)
         enhancer = ImageEnhance.Sharpness(im)
         im_s_1 = enhancer.enhance(sharpness_factor)
         # plt.imshow(im_s_1, cmap='gray')
@@ -41,7 +45,9 @@ class Cold():
             borderType=cv2.BORDER_CONSTANT,
             value=[255]
         )
+        # plt.imshow(bw_image, cmap='gray')
         return bw_image, image
+    
     
     def preprocess_image(self, img_file, sharpness_factor = 10, bordersize = 3):
         im = Image.open(img_file)
